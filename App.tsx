@@ -15,9 +15,11 @@ function App() {
   const [clips, setClips] = useState<ShortClip[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorTitle, setErrorTitle] = useState<string>('Error');
   const [clipToPlay, setClipToPlay] = useState<ShortClip | null>(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [videoDimensions, setVideoDimensions] = useState<{width: number, height: number} | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -29,10 +31,14 @@ function App() {
   };
   
   const handleUrlSubmit = (url: string) => {
-    // For this demo, we'll alert that direct URL processing is not supported.
-    // In a real app, this would involve a backend to fetch and process the video.
-    alert("Pasting video links is not supported in this demo. Please upload a file directly.");
+    setErrorTitle('Feature Not Supported');
+    setError("Pasting video links is not supported in this demo. Please upload a file from your device.");
     console.log("Video URL submitted:", url);
+  };
+
+  const handleUploadError = (message: string) => {
+    setErrorTitle('Upload Failed');
+    setError(message);
   };
   
   const handleLoadedMetadata = async () => {
@@ -41,6 +47,7 @@ function App() {
         setVideoDuration(duration);
         
         const { videoWidth, videoHeight } = videoRef.current;
+        setVideoDimensions({ width: videoWidth, height: videoHeight });
         const ar = videoWidth / videoHeight;
         if (ar > 1.2) setAspectRatio('16:9');
         else if (ar < 0.8) setAspectRatio('9:16');
@@ -52,6 +59,7 @@ function App() {
             const generatedClips = await generateShortsFromVideo(duration);
             setClips(generatedClips);
         } catch (e: any) {
+            setErrorTitle('Analysis Failed');
             setError(e.message || 'An unknown error occurred while generating clips.');
         } finally {
             setIsLoading(false);
@@ -78,6 +86,7 @@ function App() {
     setClipToPlay(null);
     setVideoDuration(0);
     setAspectRatio('16:9');
+    setVideoDimensions(null);
   };
 
   const handleReset = () => {
@@ -89,12 +98,36 @@ function App() {
     resetState();
   };
 
+  const ErrorDisplay = () => (
+    <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
+      <strong className="font-bold flex items-center">
+        <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
+        {errorTitle}
+      </strong>
+      <span className="block sm:inline ml-7">{error}</span>
+      <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+        <XMarkIcon className="h-6 w-6 text-red-300 hover:text-white" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="bg-gray-900 text-white min-h-screen font-sans">
       <Header />
       <main className="container mx-auto px-4 md:px-8 py-8">
         {!videoUrl ? (
-          <VideoUploader onVideoUpload={handleVideoUpload} onUrlSubmit={handleUrlSubmit} />
+          <div>
+            {error && (
+              <div className="mb-8">
+                <ErrorDisplay />
+              </div>
+            )}
+            <VideoUploader 
+              onVideoUpload={handleVideoUpload} 
+              onUrlSubmit={handleUrlSubmit}
+              onUploadError={handleUploadError} 
+            />
+          </div>
         ) : (
           <div>
              <button 
@@ -120,18 +153,7 @@ function App() {
                     <p className="text-sm text-gray-400">This might take a moment.</p>
                   </div>
                 )}
-                {error && (
-                   <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
-                      <strong className="font-bold flex items-center">
-                        <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
-                        Analysis Failed
-                      </strong>
-                      <span className="block sm:inline ml-7">{error}</span>
-                      <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
-                        <XMarkIcon className="h-6 w-6 text-red-300 hover:text-white" />
-                      </button>
-                   </div>
-                )}
+                {error && <ErrorDisplay />}
                 {clips.length > 0 && !isLoading && (
                   <div className="space-y-4">
                      <p className="text-gray-400 text-sm">Click 'Preview' on any card to watch the clip in the player.</p>
@@ -141,6 +163,8 @@ function App() {
                         aspectRatio={aspectRatio}
                         videoDuration={videoDuration}
                         onClipTimeChange={handleClipTimeChange}
+                        videoUrl={videoUrl}
+                        videoDimensions={videoDimensions}
                      />
                   </div>
                 )}

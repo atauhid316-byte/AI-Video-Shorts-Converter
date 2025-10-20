@@ -9,9 +9,11 @@ interface ShortsSuggestionsProps {
   aspectRatio: string;
   videoDuration: number;
   onClipTimeChange: (clipId: string, newTimes: { startTime: number; endTime: number }) => void;
+  videoUrl: string | null;
+  videoDimensions: { width: number, height: number } | null;
 }
 
-export const ShortsSuggestions: React.FC<ShortsSuggestionsProps> = ({ clips, onPreview, aspectRatio, videoDuration, onClipTimeChange }) => {
+export const ShortsSuggestions: React.FC<ShortsSuggestionsProps> = ({ clips, onPreview, aspectRatio, videoDuration, onClipTimeChange, videoUrl, videoDimensions }) => {
   return (
     <div className="space-y-6">
        <div className="flex items-center space-x-2">
@@ -27,6 +29,8 @@ export const ShortsSuggestions: React.FC<ShortsSuggestionsProps> = ({ clips, onP
             aspectRatio={aspectRatio}
             videoDuration={videoDuration}
             onClipTimeChange={onClipTimeChange}
+            videoUrl={videoUrl}
+            videoDimensions={videoDimensions}
           />
         ))}
       </div>

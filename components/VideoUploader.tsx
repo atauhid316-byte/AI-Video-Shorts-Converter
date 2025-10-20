@@ -4,15 +4,21 @@ import { FilmIcon } from './icons/FilmIcon';
 interface VideoUploaderProps {
   onVideoUpload: (file: File) => void;
   onUrlSubmit: (url: string) => void;
+  onUploadError: (message: string) => void;
 }
 
-export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoUpload, onUrlSubmit }) => {
+export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoUpload, onUrlSubmit, onUploadError }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [url, setUrl] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onVideoUpload(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.type.startsWith('video/')) {
+        onVideoUpload(file);
+      } else {
+        onUploadError("Invalid file type. Please upload a video file.");
+      }
     }
   };
 
@@ -21,13 +27,14 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoUpload, onU
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      if (e.dataTransfer.files[0].type.startsWith('video/')) {
-        onVideoUpload(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('video/')) {
+        onVideoUpload(file);
       } else {
-        alert("Please upload a valid video file.");
+        onUploadError("Invalid file type. Please upload a video file.");
       }
     }
-  }, [onVideoUpload]);
+  }, [onVideoUpload, onUploadError]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
